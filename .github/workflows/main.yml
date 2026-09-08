@@ -74,7 +74,6 @@ jobs:
             --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
             --template-file main.bicep \
             --parameters \
-              appName="${{ env.APP_NAME }}" \
               environment="${{ env.ENVIRONMENT }}" \
               location="${{ env.AZURE_LOCATION }}" \
             --output table
@@ -82,7 +81,6 @@ jobs:
             --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
             --template-file main.bicep \
             --parameters \
-              appName="${{ env.APP_NAME }}" \
               environment="${{ env.ENVIRONMENT }}" \
               location="${{ env.AZURE_LOCATION }}" \
             --output table
@@ -90,7 +88,6 @@ jobs:
             --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
             --template-file main.bicep \
             --parameters \
-              appName="${{ env.APP_NAME }}" \
               environment="${{ env.ENVIRONMENT }}" \
               location="${{ env.AZURE_LOCATION }}" \
             --output table
