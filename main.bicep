@@ -1,20 +1,20 @@
-param location string = resourceGroup().location
+@description('Application name.')
 param appName string
+
+@description('Deployment environment.')
 param environment string
 
-module appServicePlan './modules/app-service-plan.bicep' = {
-  name: 'app-service-plan'
-  params: {
-    location: location
-    planName: '${appName}-${environment}-plan'
-  }
-}
+@description('Azure region.')
+param location string = resourceGroup().location
 
 module appService './modules/app-service.bicep' = {
-  name: 'app-service'
+  name: 'app-service-${environment}'
   params: {
     location: location
     appName: '${appName}-${environment}'
-    appServicePlanId: appServicePlan.outputs.planId
+    appServicePlanName: '${appName}-${environment}-plan'
   }
 }
+
+output appServiceName string = appService.outputs.appServiceName
+output appServicePlanName string = appService.outputs.appServicePlanName
