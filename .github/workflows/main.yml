@@ -1,30 +1,103 @@
-# This is a basic workflow to help you get started with Actions
+name: Deploy Azure App Service
 
-name: CI
-
-# Controls when the workflow will run
 on:
-  # Allows you to run this workflow manually from the Actions tab
+  push:
+    branches:
+      - main
+
   workflow_dispatch:
 
+# Required for Azure OIDC authentication
 permissions:
   id-token: write
   contents: read
 
+env:
+  AZURE_RESOURCE_GROUP: myapp-dev-rg
+  AZURE_LOCATION: westeurope
+  APP_NAME: myapp
+  ENVIRONMENT: dev
+
 jobs:
-  deploy:
+
+  # ==========================================================
+  # 1. Create Resource Group
+  # ==========================================================
+  create-resource-group:
+    name: Create Resource Group
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Azure login
+      - name: Azure Login
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Deploy
+      - name: Verify Azure Account
         run: |
           az account show
+
+      - name: Create Resource Group
+        run: |
+          az group create \
+            --name "${{ env.AZURE_RESOURCE_GROUP }}" \
+            --location "${{ env.AZURE_LOCATION }}" \
+            --output table
+
+
+  # ==========================================================
+  # 2. Deploy Azure Infrastructure
+  # ==========================================================
+  deploy-infrastructure:
+    name: Deploy App Service Infrastructure
+    runs-on: ubuntu-latest
+
+    needs:
+      - create-resource-group
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+
+      - name: Deploy Bicep
+        run: |
+          az deployment group validate \
+            --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
+            --template-file main.bicep \
+            --parameters \
+              appName="${{ env.APP_NAME }}" \
+              environment="${{ env.ENVIRONMENT }}" \
+              location="${{ env.AZURE_LOCATION }}" \
+            --output table
+          az deployment group what-if \
+            --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
+            --template-file main.bicep \
+            --parameters \
+              appName="${{ env.APP_NAME }}" \
+              environment="${{ env.ENVIRONMENT }}" \
+              location="${{ env.AZURE_LOCATION }}" \
+            --output table
+          az deployment group create \
+            --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
+            --template-file main.bicep \
+            --parameters \
+              appName="${{ env.APP_NAME }}" \
+              environment="${{ env.ENVIRONMENT }}" \
+              location="${{ env.AZURE_LOCATION }}" \
+            --output table
+
+      - name: Show deployed resources
+        run: |
+          az resource list \
+            --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
+            --output table
