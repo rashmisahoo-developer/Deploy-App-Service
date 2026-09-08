@@ -1,5 +1,5 @@
 @description('Application name.')
-param appName string
+param appName string = 'testapp-x-qrcore'
 
 @description('Deployment environment.')
 param environment string
